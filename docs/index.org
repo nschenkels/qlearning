@@ -1,0 +1,114 @@
+#+TITLE: Notes on Q-learning and deep Q-learning
+#+AUTHOR: N. De Neuter, N. Schenkels
+#+OPTIONS: num:nil
+#+SETUPFILE: https://fniessen.github.io/org-html-themes/setup/theme-readtheorg.setup
+
+#+BEGIN_SRC latex-macros
+    \newcommand{\mbbR}{\mathbb{R}}
+    \DeclareMathOperator*{\argmax}{argmax}
+#+END_SRC
+
+* Introduction
+The goal is the learn the Q-learning agent to play a game. A game consists of:
+- A set of states $S$.
+- A set of actions $A$.
+- A reward function $r: S\times A\rightarrow \mbbR$ that links a reward to
+  every state-action pair $(s, a)$.
+
+* Q-learning
+** Q-table
+We will assume for now that $S$ and $A$ are finite, with $m$ and $n$ elements
+respectively. In the case that a game has infinite states or actions - or when
+the number of elements is to high for practical consideration - a discrete
+representation can be used to map every state-action pair to an element of
+$S\times A$.
+
+With each state-action $(s, a)$ we can associate a quality value (Q-value) that
+represents how good it is to take action $a$ in state $s$. Here, "good" should
+be interpreted in the sense of getting closer to achieving the goal of the game.
+We can think of this as a function
+\[
+    Q: S\times A\longrightarrow \mbbR: (s, a)\mapsto q,
+\]
+and since $S$ and $A$ are finite, represent this function in a so-called
+Q-table:
+  |          | a_1      | a_2      | ...      | a_n      |
+  |----------+----------+----------+----------+----------|
+  | s_1      | q_{11}   | q_{12}   | ...      | q_{1n}   |
+  | s_2      | q_{21}   | q_{22}   | ...      | q_{2n}   |
+  | $\vdots$ | $\vdots$ | $\vdots$ | $\ddots$ | $\vdots$ |
+  | s_m      | q_{m1}   | q_{m2}   | ...      | q_{mn}   |
+
+** The learning process
+The idea behind Q-learning is to let the agent learn/discover the
+Q-values for each state-action pair $(s_i, a_j)$ automatically. In order to do
+this, we start from an initial (random) Q-table and try to improve the Q-values
+by playing the game over and over and looking at the rewards of all the actions
+that were taken. A rough sketch would be:
+ - Start from an initial state.
+ - Perform an action and advance the game to a new state.
+ - Update the Q-table based on the result of the action (see further).
+ - If the game terminates - for whatever reason: win, loss, time-out, ... -
+   start again from a new initial state.
+ - Keep doing this until the agent has learned to play the game successfully.
+The longer this is done, the more accurate the values in the (approximate)
+Q-table should become to their true (unknown) values and the better the agent
+should become at playing the game.
+
+If, during the Q-learing algorithm, we are in state $s_t$ and take action $a_t$,
+then the corresponding Q-value is updated as follows:
+#+NAME: eq-q-update
+\begin{equation}
+    Q(s_t, a_t) \longleftarrow Q(s_t, a_t) + \alpha\left(r_t +
+        \gamma\argmax_aQ(s_{t + 1}, a) - Q(s_t, a_t)\right)
+\end{equation}
+This formula has the following parameters:
+- $r_t = r(s_t, a_t)$ is the reward from taking action $a_t$ in state $s_t$. A
+  higher reward leads to a higher updated Q-value.
+- $\alpha$ is the learning rate. Higher values lead to higher updated Q-value.
+- $s_{t + 1}$ is the state in which we arrive after taking action $a_t$ in state
+  $s_t$. The term $\gamma\argmax_aQ(s_{t + 1}, a)$ adds a contribution based on
+  the Q-value of the actions we can take in the next state. Here, $\gamma$ is a
+  discount factor that puts more or less weight on these future actions.
+
+During the Q-learning algorithm there are two ways of choosing which action to
+take. The first is to simply take the action with the highest Q-value. In order
+to let the agent try different strategies, however, the second option is to take
+a random action. In order to not keep taking random actions the chance of taking
+a random action should decrease as the algorithm performs more and more steps.
+
+** Notes on target, reward, and stochastic version
+
+* Deep Q-learning
+Q-learning works well for simple games where we can represent all state-action
+pairs in a table (or at least a good finite representation of them). For many
+games, however, this is simply impossible: the number of states and or actions
+is just to high, or we run into memory restrictions, etc. In these cases deep
+Q-learning is better suited. The idea is to train a neural network to predict
+the q-values. More precisely, given a game state $s$, the neural network would
+return a list of Q-values corresponding to the row of $s$ in the Q-table.
+As stated before, this approach should work better for more complex games, e.g.,
+many actions, (infinitely) many states, high memory requirements, ...
+
+** The learning process
+The learning process for deep Q-learning is essentially the same as for
+Q-learning. The difference lies in how we get our Q-values - from a neural
+network instead of from a table - and how we update these neural network -
+instead of updating the Q-table. Two notable differences:
+ - If the action taken is not random, the state is given to the neural network,
+   a fit is performed, and the output (= Q-values) is used to decide which
+   action is taken.
+ - Based on the result of the action the weights of the neural network are
+   updated (see further).
+
+** Updating the neural network(s)
+After the action is taken and the new game state and reward are calculated,
+we want to update the neural network. In Q-learning, we simply used Equation
+[[eq-q-update]] to update a single value at a time. Since the neural network
+never gives back the Q-value for one action, but for all the actions given a
+state, we will now calculate the updates weights for all actions given a state
+$s$ using Equation [[eq-q-update]] and then ...
+
+
+
+* Representing a game environment
