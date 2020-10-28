@@ -6,6 +6,8 @@
 * Description
 We use Q-learning and deep Q-learning to teach an agent how to play games.
 
+Documentation is available [[https://nschenkels.github.io/qlearning/][here]].
+
 * Background
 ** Weblinks
 - Q-learning on [[https://en.wikipedia.org/wiki/Q-learning][Wikipedia]].
