@@ -109,6 +109,16 @@ never gives back the Q-value for one action, but for all the actions given a
 state, we will now calculate the updates weights for all actions given a state
 $s$ using Equation [[eq-q-update]] and then ...
 
-
-
 * Representing a game environment
+A game environment is represented by a python class with the following
+ - state: a structure that represents the state of the game.
+ - reward: the reward of the current state.
+ - done: a boolean value indicating if the game is in a terminal state.
+ - info: a dictionary with extra game information.
+ - actions: a dictionary of possible actions with integer keys.
+The following methods are also available:
+ - reset: resets the state to an initial game state and returns this
+   state.
+ - step: takes an action and performs this action, updating the game state.
+   This method returns self.state, self.reward, self.done, and self.info.
+ - render: visualizes the current game state.
