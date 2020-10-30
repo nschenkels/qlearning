@@ -6,16 +6,16 @@ game of 2048.
 """
 
 
-import random
+import numpy as np
 
 
-class game2048():
+class Game2048():
     """
     2048 game environment.
 
-    The game state will consist of a list of length 16 with integer entries.
-    This represents the log2 of the tile value. We consider empty tiles to have
-    value 1, and they are therefore represented by 0.
+    The game state will consist of a numpy array of shape (16,)  with integer
+    entries. This represents the log2 of the tile value. We consider empty tiles
+    to have value 1, and they are therefore represented by 0.
     """
 
     def __init__(self):
@@ -42,8 +42,6 @@ class game2048():
         Perfrom an action. Note that if two tiles with log2 value n are joined,
         they are replaced by a tile with log2 value n + 1.
         """
-
-        print(self.state, action)
 
         # Perform the action to determine the new state:
         if action in ['left', 'right']:
@@ -81,7 +79,7 @@ class game2048():
                     rows[i] = (4 - len(rows[i]))*[0] + rows[i]
 
             # Transform the rows into a new state:
-            new_state = [n for row in rows for n in row]
+            new_state = np.array([n for row in rows for n in row])
         elif action in ['up', 'down']:
             # Collect the columns and strip the empty tiles:
             cols = []
@@ -121,11 +119,9 @@ class game2048():
         else:
             raise Exception('Unknown action.')
 
-        print(new_state)
-
         # Update the game environment:
         new_max = (max(self.state) != max(new_state))
-        state_changed = (self.state != new_state)
+        state_changed = not np.array_equal(self.state, new_state)
         if state_changed:
             self.state = new_state.copy()
             self.calc_score()
@@ -151,7 +147,7 @@ class game2048():
         """
         Resets the state of the environment and returns an inital observation.
         """
-        self.state = 16*[0]
+        self.state = np.zeros(16, dtype=int)
         self.score = 0
         self.reward = 0
         self.done = False
@@ -175,11 +171,11 @@ class game2048():
 
         # See which tiles are blank and choose one to fill:
         blanks = [index for index in range(16) if self.state[index] == 0]
-        index = random.choice(blanks)
+        index = np.random.choice(blanks)
 
         # Add a 4-tile with an alpha probability:
         alpha = 0.025
-        if random.random() <= alpha:
+        if np.random.rand() <= alpha:
             self.state[index] = 2
             self.info['fours'] += 1
         else:
@@ -268,4 +264,5 @@ class game2048():
 
 
 if __name__ == '__main__':
-    game2048().play()
+    env = Game2048()
+    env.play()
