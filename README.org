@@ -3,20 +3,9 @@
 #+EXPORT_EXClUDE_TAGS: noexport
 #+OPTIONS: toc:nil num:nil
 
-* Description
 We use Q-learning and deep Q-learning to teach an agent how to play games.
 
 Documentation is available [[https://nschenkels.github.io/qlearning/][here]].
-
-* Background
-** Weblinks
-- Q-learning on [[https://en.wikipedia.org/wiki/Q-learning][Wikipedia]].
-- [[https://www.analyticsvidhya.com/blog/2019/04/introduction-deep-q-learning-python/][weblink 1]]
-- [[https://www.mlq.ai/deep-reinforcement-learning-q-learning/][weblink 2]]
-
-** Tutorials
-In [[file:tutorials/][tutorials]] we follow along with sentdex's [[https://pythonprogramming.net/introduction-deep-learning-python-tensorflow-keras/][introduction to deep learning]]
-and his videos [[https://pythonprogramming.net/q-learning-reinforcement-learning-python-tutorial/][Q-learning and deep Q-learning]].
 
 * To do list :noexport:
 ** TODO Expand to other games:

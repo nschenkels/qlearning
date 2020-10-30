@@ -122,3 +122,10 @@ The following methods are also available:
  - step: takes an action and performs this action, updating the game state.
    This method returns self.state, self.reward, self.done, and self.info.
  - render: visualizes the current game state.
+
+* References & further reading
+- Sentdex's introduction to [[https://pythonprogramming.net/introduction-deep-learning-python-tensorflow-keras/][deep learning]]
+- Sentdex's  tutorial on [[https://pythonprogramming.net/q-learning-reinforcement-learning-python-tutorial/][Q-learning and deep Q-learning]].
+- Q-learning on [[https://en.wikipedia.org/wiki/Q-learning][Wikipedia]].
+- [[https://www.analyticsvidhya.com/blog/2019/04/introduction-deep-q-learning-python/][weblink 1]]
+- [[https://www.mlq.ai/deep-reinforcement-learning-q-learning/][weblink 2]]
