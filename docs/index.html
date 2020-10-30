@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2020-10-29 Thu 00:03 -->
+<!-- 2020-10-30 Fri 11:31 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Notes on Q-learning and deep Q-learning</title>
@@ -283,17 +283,18 @@ for the JavaScript code in this tag.
 <li><a href="#org62eeeb7">Q-learning</a>
 <ul>
 <li><a href="#orgd06f1c0">Q-table</a></li>
-<li><a href="#orge2463f3">The learning process</a></li>
+<li><a href="#org161fa4b">The learning process</a></li>
 <li><a href="#orga099aee">Notes on target, reward, and stochastic version</a></li>
 </ul>
 </li>
 <li><a href="#org7d53276">Deep Q-learning</a>
 <ul>
-<li><a href="#org161fa4b">The learning process</a></li>
+<li><a href="#org8785fac">The learning process</a></li>
 <li><a href="#org58d1aee">Updating the neural network(s)</a></li>
 </ul>
 </li>
 <li><a href="#org6207c1b">Representing a game environment</a></li>
+<li><a href="#org2ae2bb4">References &amp; further reading</a></li>
 </ul>
 </div>
 </div>
@@ -399,9 +400,9 @@ Q-table:
 </div>
 </div>
 
-<div id="outline-container-orge2463f3" class="outline-3">
-<h3 id="orge2463f3">The learning process</h3>
-<div class="outline-text-3" id="text-orge2463f3">
+<div id="outline-container-org161fa4b" class="outline-3">
+<h3 id="org161fa4b">The learning process</h3>
+<div class="outline-text-3" id="text-org161fa4b">
 <p>
 The idea behind Q-learning is to let the agent learn/discover the
 Q-values for each state-action pair \((s_i, a_j)\) automatically. In order to do
@@ -476,9 +477,9 @@ many actions, (infinitely) many states, high memory requirements, &#x2026;
 </p>
 </div>
 
-<div id="outline-container-org161fa4b" class="outline-3">
-<h3 id="org161fa4b">The learning process</h3>
-<div class="outline-text-3" id="text-org161fa4b">
+<div id="outline-container-org8785fac" class="outline-3">
+<h3 id="org8785fac">The learning process</h3>
+<div class="outline-text-3" id="text-org8785fac">
 <p>
 The learning process for deep Q-learning is essentially the same as for
 Q-learning. The difference lies in how we get our Q-values - from a neural
@@ -504,21 +505,55 @@ we want to update the neural network. In Q-learning, we simply used Equation
 \eqref{org2615645} to update a single value at a time. Since the neural network
 never gives back the Q-value for one action, but for all the actions given a
 state, we will now calculate the updates weights for all actions given a state
-\(s\) using Equation \eqref{org2615645} and then &#x2026;
+\(s\) using Equation \eqref{org2615645} and then fit the neural network to these
+updated values.
 </p>
 </div>
 </div>
 </div>
 
-
-
 <div id="outline-container-org6207c1b" class="outline-2">
 <h2 id="org6207c1b">Representing a game environment</h2>
+<div class="outline-text-2" id="text-org6207c1b">
+<p>
+A game environment is represented by a python class with the following
+</p>
+<ul class="org-ul">
+<li>state: a structure that represents the state of the game.</li>
+<li>reward: the reward of the current state.</li>
+<li>done: a boolean value indicating if the game is in a terminal state.</li>
+<li>info: a dictionary with extra game information.</li>
+<li>actions: a dictionary of possible actions with integer keys.</li>
+</ul>
+<p>
+The following methods are also available:
+</p>
+<ul class="org-ul">
+<li>reset: resets the state to an initial game state and returns this
+state.</li>
+<li>step: takes an action and performs this action, updating the game state.
+This method returns self.state, self.reward, self.done, and self.info.</li>
+<li>render: visualizes the current game state.</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org2ae2bb4" class="outline-2">
+<h2 id="org2ae2bb4">References &amp; further reading</h2>
+<div class="outline-text-2" id="text-org2ae2bb4">
+<ul class="org-ul">
+<li>Sentdex's introduction to <a href="https://pythonprogramming.net/introduction-deep-learning-python-tensorflow-keras/">deep learning</a></li>
+<li>Sentdex's  tutorial on <a href="https://pythonprogramming.net/q-learning-reinforcement-learning-python-tutorial/">Q-learning and deep Q-learning</a>.</li>
+<li>Q-learning on <a href="https://en.wikipedia.org/wiki/Q-learning">Wikipedia</a>.</li>
+<li><a href="https://www.analyticsvidhya.com/blog/2019/04/introduction-deep-q-learning-python/">weblink 1</a></li>
+<li><a href="https://www.mlq.ai/deep-reinforcement-learning-q-learning/">weblink 2</a></li>
+</ul>
+</div>
 </div>
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: N. De Neuter, N. Schenkels</p>
-<p class="date">Created: 2020-10-29 Thu 00:03</p>
+<p class="date">Created: 2020-10-30 Fri 11:31</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
