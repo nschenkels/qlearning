@@ -19,6 +19,7 @@ class Game2048():
     """
 
     def __init__(self):
+        self.reset()
         self.actions = {0: 'left', 1: 'right', 2: 'up', 3: 'down'}
 
     def __str__(self):
@@ -147,8 +148,8 @@ class Game2048():
         """
         Resets the state of the environment and returns an inital observation.
         """
+
         self.state = np.zeros(16, dtype=int)
-        self.score = 0
         self.reward = 0
         self.done = False
         self.info = {'fours': 0, 'moves': 0, 'score': 0, 'total_reward': 0}
@@ -160,6 +161,7 @@ class Game2048():
         """
         Used to visualize testing the agent.
         """
+
         print(f"Score: {self.info['score']}, reward: {self.reward}, "
               f"total reward: {self.info['total_reward']}\n{self}\n")
 
