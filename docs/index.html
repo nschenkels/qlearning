@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2020-10-30 Fri 11:31 -->
+<!-- 2020-10-30 Fri 13:17 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Notes on Q-learning and deep Q-learning</title>
@@ -283,13 +283,13 @@ for the JavaScript code in this tag.
 <li><a href="#org62eeeb7">Q-learning</a>
 <ul>
 <li><a href="#orgd06f1c0">Q-table</a></li>
-<li><a href="#org161fa4b">The learning process</a></li>
+<li><a href="#org8785fac">The learning process</a></li>
 <li><a href="#orga099aee">Notes on target, reward, and stochastic version</a></li>
 </ul>
 </li>
 <li><a href="#org7d53276">Deep Q-learning</a>
 <ul>
-<li><a href="#org8785fac">The learning process</a></li>
+<li><a href="#orgfec876c">The learning process</a></li>
 <li><a href="#org58d1aee">Updating the neural network(s)</a></li>
 </ul>
 </li>
@@ -400,9 +400,9 @@ Q-table:
 </div>
 </div>
 
-<div id="outline-container-org161fa4b" class="outline-3">
-<h3 id="org161fa4b">The learning process</h3>
-<div class="outline-text-3" id="text-org161fa4b">
+<div id="outline-container-org8785fac" class="outline-3">
+<h3 id="org8785fac">The learning process</h3>
+<div class="outline-text-3" id="text-org8785fac">
 <p>
 The idea behind Q-learning is to let the agent learn/discover the
 Q-values for each state-action pair \((s_i, a_j)\) automatically. In order to do
@@ -477,9 +477,9 @@ many actions, (infinitely) many states, high memory requirements, &#x2026;
 </p>
 </div>
 
-<div id="outline-container-org8785fac" class="outline-3">
-<h3 id="org8785fac">The learning process</h3>
-<div class="outline-text-3" id="text-org8785fac">
+<div id="outline-container-orgfec876c" class="outline-3">
+<h3 id="orgfec876c">The learning process</h3>
+<div class="outline-text-3" id="text-orgfec876c">
 <p>
 The learning process for deep Q-learning is essentially the same as for
 Q-learning. The difference lies in how we get our Q-values - from a neural
@@ -553,7 +553,7 @@ This method returns self.state, self.reward, self.done, and self.info.</li>
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: N. De Neuter, N. Schenkels</p>
-<p class="date">Created: 2020-10-30 Fri 11:31</p>
+<p class="date">Created: 2020-10-30 Fri 13:17</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

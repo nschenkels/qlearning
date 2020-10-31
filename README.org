@@ -10,10 +10,10 @@ Documentation is available [[https://nschenkels.github.io/qlearning/][here]].
 * To do list :noexport:
 ** TODO Game2048:
 - [X] Make state a numpy array: (16,) or (4, 4) ?
+- [ ] Add nicer way of rendering the game.
 ** TODO Agent2048:
 - [ ] Add argument parser to easily run from command line.
 ** TODO Expand to other games:
-- [ ] 2048
 - [ ] catch
 - [ ] navigating through a maze
 - [ ] snake

@@ -18,9 +18,15 @@ class Game2048():
     to have value 1, and they are therefore represented by 0.
     """
 
-    def __init__(self):
+    def __init__(self, reward_callback=None):
+        """
+        reward_callback: a function that takes the current state and the
+                         new_state as input and returs a reward.
+        """
+
         self.reset()
         self.actions = {0: 'left', 1: 'right', 2: 'up', 3: 'down'}
+        self.reward_callback = reward_callback
 
     def __str__(self):
         # Get the tile values:
@@ -116,12 +122,11 @@ class Game2048():
                     cols[i] = (4 - len(cols[i]))*[0] + cols[i]
 
             # Collect the new new_state in one list:
-            new_state = [col[i] for i in range(4) for col in cols]
+            new_state = np.array([col[i] for i in range(4) for col in cols])
         else:
             raise Exception('Unknown action.')
 
         # Update the game environment:
-        new_max = (max(self.state) != max(new_state))
         state_changed = not np.array_equal(self.state, new_state)
         if state_changed:
             self.state = new_state.copy()
@@ -131,18 +136,11 @@ class Game2048():
             self.info['moves'] += 1
 
         # Calculate the reward:
-        if new_max == 11:
-            self.reward = 100
-        elif new_max:
-            self.reward = 10
-        elif state_changed:
-            self.reward = 0
-        else:
-            self.reward = -100
+        reward = self.calc_reward(self.state, new_state)
         self.info['total_reward'] += self.reward
 
         #
-        return (self.state, self.reward, self.done, self.info)
+        return self.state, self.reward, self.done, self.info
 
     def reset(self):
         """
@@ -183,6 +181,31 @@ class Game2048():
         else:
             self.state[index] = 1
 
+    def calc_reward(self, current_state, new_state):
+        """
+        Calculate the reward.
+        """
+
+        # Check if the user called the environment with a special reward
+        # callback:
+        if self.reward_callback is not None:
+            reward = self.reward_callback(current_state, new_state)
+        else:
+            new_max = (max(self.state) != max(new_state))
+            state_changed = not np.array_equal(self.state, new_state)
+            if new_max == 11:
+                reward = 2
+            elif new_max:
+                reward = 1
+            elif state_changed:
+                reward = 0
+            else:
+                reward = -1
+
+        #
+        self.reward = reward
+        return reward
+
     def calc_score(self):
         """
         Update the score of the game.
@@ -194,7 +217,7 @@ class Game2048():
                 self.info['score'] += (n - 1)*2**n
 
         # Add a corrections for the 4-tiles that were randomly added:
-        self.score -= 4*self.info['fours']
+        self.info['score'] -= 4*self.info['fours']
 
     def check_done(self):
         """
