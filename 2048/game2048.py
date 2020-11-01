@@ -7,6 +7,16 @@ game of 2048.
 
 
 import numpy as np
+from matplotlib import colors
+import matplotlib.pyplot as plt
+
+
+CMAP = colors.ListedColormap(['#ccc0b3', '#eee4da', '#ede0c8', '#f2b179',
+                              '#f59563', '#f67c5f', '#f65e3b', '#edcf72',
+                              '#edcc61', '#edc850', '#edc53f', '#edc22e',
+                              '#3c3a32'])
+BOUNDARIES = [0.5, 1.5, 3, 7, 15, 31, 63, 127, 255, 511, 1023, 2047, 4095, 1e99]
+NORM = colors.BoundaryNorm(BOUNDARIES, CMAP.N, clip=True)
 
 
 class Game2048():
@@ -24,9 +34,12 @@ class Game2048():
                          new_state as input and returs a reward.
         """
 
+        #
         self.reset()
         self.actions = {0: 'left', 1: 'right', 2: 'up', 3: 'down'}
         self.reward_callback = reward_callback
+        self.fig = plt.figure(figsize=(4, 4))
+        self.fig.set_tight_layout(True),
 
     def __str__(self):
         # Get the tile values:
@@ -126,6 +139,10 @@ class Game2048():
         else:
             raise Exception('Unknown action.')
 
+        # Calculate the reward:
+        reward = self.calc_reward(self.state, new_state)
+        self.info['total_reward'] += self.reward
+
         # Update the game environment:
         state_changed = not np.array_equal(self.state, new_state)
         if state_changed:
@@ -135,16 +152,12 @@ class Game2048():
             self.check_done()
             self.info['moves'] += 1
 
-        # Calculate the reward:
-        reward = self.calc_reward(self.state, new_state)
-        self.info['total_reward'] += self.reward
-
         #
         return self.state, self.reward, self.done, self.info
 
     def reset(self):
         """
-        Resets the state of the environment and returns an inital observation.
+        Reset the state of the environment and return an inital observation.
         """
 
         self.state = np.zeros(16, dtype=int)
@@ -157,11 +170,29 @@ class Game2048():
 
     def render(self):
         """
-        Used to visualize testing the agent.
+        Visualize the agent.
         """
 
-        print(f"Score: {self.info['score']}, reward: {self.reward}, "
-              f"total reward: {self.info['total_reward']}\n{self}\n")
+        # Command line rendering:
+        # print(f"Score: {self.info['score']}, reward: {self.reward}, "
+        #       f"total reward: {self.info['total_reward']}\n{self}")
+
+        #
+        data = 2**self.state.reshape(4, 4)
+        self.fig.clf()
+        ax = self.fig.subplots()
+        ax.axis('off')
+        ax.imshow(data, cmap=CMAP, norm=NORM)
+        for (i, j), n in np.ndenumerate(data):
+            if n == 1:
+                continue
+            ax.text(j, i, f'{n:d}', ha='center', va='center')
+        ax.set_title(f"Score: {self.info['score']}, reward: {self.reward}, "
+                     f"total reward: {self.info['total_reward']}")
+        plt.draw()
+        plt.pause(1e-3)
+        self.fig.show()
+
 
     def add_random_tile(self):
         """
@@ -252,32 +283,33 @@ class Game2048():
         Manually play a game of 2048.
         """
 
+        map = {'left': 'left', 'right': 'right', 'up': 'up', 'down': 'down',
+               'q': 'left', 'd': 'right', 'z': 'up', 's': 'down'}
+
         #
         print('Let\'s play a game of 2048\n'
               'Enter "left", "right", "up" or "down" to make a move.\n'
-              'Enter "quit" to quit.\n')
+              'Enter "quit" to quit.')
 
         #
         self.reset()
+        self.render()
         while not self.done:
             #
-            print(f"SCORE: {self.info['score']}\n{self}")
-
-            #
             action = ''
-            while action not in ['left', 'right', 'up', 'down', 'quit']:
+            # while action not in ['left', 'right', 'up', 'down', 'quit']:
+            while action not in map or action == 'quit':
                 print('Your move: ', end = '')
                 action = input()
                 if action == 'quit':
                     return None
-                elif action not in ['left', 'right', 'up', 'down']:
+                elif action not in map:
                     print('Your move must be "left", "right", "up" or "down". '
                           'Please try again.')
-                print()
-            self.step(action)
+            self.step(map[action])
 
-        #
-        print(f"SCORE: {self.info['score']}\n{self}\n")
+            #
+            self.render()
 
         #
         if 11 in self.state:
