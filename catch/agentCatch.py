@@ -5,6 +5,7 @@ catch_agent.py
 
 import os
 import cv2
+import pickle
 import random
 import argparse
 import datetime
@@ -25,16 +26,14 @@ class CatchAgent:
     """
     Agent class
     """
-    def __init__(self, env, name='CatchAgent', epsilon_callback=None, **kwargs):
+    def __init__(self, env, name=None, **kwargs):
         """
-        epsilon_callback: a function that takes the current value of epsilon
-                          and the current episode as input and returns a new
-                          value for epsilon.
         **kwargs: can be used to override the default parameters.
         """
 
         # Training parameters:
         self.EPISODES = 1_000
+        self.EPSILON_START = 1
         self.EPSILON_DECAY = 0.999
         self.EPSILON_MIN = 0.001
         self.GAMMA = 0.99
@@ -44,25 +43,27 @@ class CatchAgent:
         self.TARGET_MODEL_UPDATE_PERIOD = 20
 
         # Rendering parameters:
-        self.RENDER = False                   # render game board
+        self.RENDER = False                   # render the game
         self.RENDER_EVERY = 100
-        self.RENDER_SAVE = False
-        self.STATS_AGGREGATION_PERIOD = 50
-        self.RENDER_STATS = True              # render stats window
+        self.RENDER_SAVE = True
+        self.STATS_AGGREGATION_PERIOD = 10
+        self.RENDER_STATS = True              # render statistics
         self.RENDER_STATS_SAVE = True
 
         # Save parameters:
         self.SAVE = True
         self.SAVE_EVERY = 100
 
-        # Output folders:
+       # Output folders:
         self.FOLDER_MODELS = 'models/'
         self.FOLDER_REPLAYS = 'replays/'
 
         # Process input:
-        self.name = name.replace(' ', '_') + \
-                    datetime.datetime.now().strftime('_%Y_%m_%d_%H_%M')
-        self.epsilon_callback = epsilon_callback
+        if name is None:
+            self.name = 'catch_agent_' + \
+                datetime.datetime.now().strftime('%Y_%m_%d_%H_%M')
+        else:
+            self.name = name.replace(' ', '_')
         for kwarg in kwargs:
             if hasattr(self, kwarg):
                 setattr(self, kwarg, kwargs[kwarg])
@@ -75,15 +76,20 @@ class CatchAgent:
 
         #
         self.env = env
-        self.epsilons = [1]
+        self.epsilons = []
         self.memory = deque(maxlen=self.MEMORY_SIZE_MAX)
         self.stats = {'rewards': [], 'aggr_avg': [], 'aggr_max': [],
                       'aggr_min': []}
         self.target_model_update_counter = 0
+        self.offset = 0
 
         # Figure for aggregated stats:
-        self.fig = plt.figure()
-        self.ax = self.fig.subplots()
+        self.fig1 = plt.figure()
+        self.ax1 = self.fig1.subplots()
+
+        # Figure for epsilon:
+        self.fig2 = plt.figure()
+        self.ax2 = self.fig2.subplots()
 
         # Main & target model
         self.model = self.create_model()
@@ -100,8 +106,10 @@ class CatchAgent:
                                    input_shape=self.env.state.shape,
                                    data_format='channels_first'),
             tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+            tf.keras.layers.Dropout(0.20),
             tf.keras.layers.Conv2D(256, (3, 3), activation='relu'),
             tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+            tf.keras.layers.Dropout(0.20),
             tf.keras.layers.Flatten(),
             tf.keras.layers.Dense(64, activation='relu'),
             tf.keras.layers.Dense(len(self.env.actions), activation='linear')
@@ -115,17 +123,19 @@ class CatchAgent:
         """
 
         # Iterate over episodes
+        episode_offset = self.offset
+        episode_offset_max = self.offset + self.EPISODES
         for episode in range(1, self.EPISODES + 1):
+            #
+            episode_offset += 1
+
             # Reset the game environment:
             current_state = self.env.reset()
             done = False
 
             # Get epsilon:
-            if self.epsilon_callback is None:
-                epsilon = 1 if episode == 1 else \
-                    max(self.EPSILON_MIN, self.EPSILON_DECAY*self.epsilons[-1])
-            else:
-                epsilon = self.epsilon_callback(self.epsilons[-1], episode)
+            epsilon = self.EPSILON_START if episode == 1 else \
+                max(self.EPSILON_MIN, self.EPSILON_DECAY*self.epsilons[-1])
             self.epsilons.append(epsilon)
 
             # Reset episode variables:
@@ -150,7 +160,8 @@ class CatchAgent:
                 episode_reward += reward
 
                 # Render the environment:
-                if self.RENDER and not episode % self.RENDER_EVERY:
+                if self.RENDER and (not episode % self.RENDER_EVERY or
+                                    episode == self.EPISODES):
                     self.env.render()
                     if self.RENDER_SAVE:
                         self.env.fig.savefig(f'{self.FOLDER_REPLAYS}{move}.png')
@@ -166,11 +177,11 @@ class CatchAgent:
                     break
 
             # Save a video replay of the episode:
-            if self.RENDER and not episode % self.RENDER_EVERY and \
-                    self.RENDER_SAVE:
+            if self.RENDER and (not episode % self.RENDER_EVERY or
+                                episode == self.EPISODES) and self.RENDER_SAVE:
                 fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
                 out = cv2.VideoWriter(
-                    f'{self.FOLDER_REPLAYS}{self.name}_{episode:04}.avi',
+                    f'{self.FOLDER_REPLAYS}{self.name}_{episode_offset:04}.avi',
                     fourcc, 10, (375, 500))
                 frames = [frame for frame in os.listdir(self.FOLDER_REPLAYS) if
                           frame.endswith('.png')]
@@ -189,36 +200,51 @@ class CatchAgent:
 
             #
             if self.RENDER_STATS:
-                self.ax.clear()
-                rr = range(1, episode + 1)
-                self.ax.plot(rr, self.stats['aggr_avg'], 'C0')
-                self.ax.plot(rr, self.stats['aggr_max'], 'C1--')
-                self.ax.plot(rr, self.stats['aggr_min'], 'C1--')
-                self.ax.set_title('Aggregated reward per '
+                #
+                rr = range(1, self.offset + episode + 1)
+
+                # Aggregated reward:
+                self.ax1.clear()
+                self.ax1.plot(rr, self.stats['aggr_avg'], 'C0')
+                self.ax1.plot(rr, self.stats['aggr_max'], 'C1--')
+                self.ax1.plot(rr, self.stats['aggr_min'], 'C1--')
+                self.ax1.set_title('Aggregated reward per '
                                   f'{self.STATS_AGGREGATION_PERIOD} episodes')
-                self.ax.set_xlabel('Episode')
+                self.ax1.set_xlabel('Episode')
+                self.ax1.set_ylabel('min/avg/max')
                 plt.draw()
-                self.fig.show()
+                self.fig1.show()
+                plt.pause(1e-3)
+
+                # Epsilon:
+                self.ax2.clear()
+                self.ax2.plot(rr, self.epsilons, 'C0')
+                self.ax2.set_title('Exploration level')
+                self.ax2.set_xlabel('Episode')
+                self.ax2.set_ylabel(r'$\varepsilon$')
+                plt.draw()
+                self.fig2.show()
                 plt.pause(1e-3)
 
             # Print some information:
-            print(f'episode: {episode:3}/{self.EPISODES}, '
+            print(f'episode: {episode_offset:4}/{episode_offset_max}, '
                   f'moves (total/random): {move:03}/{c1:03}, '
-                  f'score: {self.env.info["score"]}, '
-                  f'reward: {episode_reward:3}, '
-                  f'min: {np.min(window):3} '
-                  f'avg: {np.mean(window):3.2f}, '
-                  f'max: {np.max(window):3}, '
+                  f'score: {self.env.info["score"]:2}, '
+                  f'reward: {episode_reward:2}, '
+                  f'min: {np.min(window):2} '
+                  f'avg: {np.mean(window):2.2f}, '
+                  f'max: {np.max(window):2}, '
                   f'epsilon: {epsilon:.3f}')
 
             # Save model:
             if self.SAVE and (not episode % self.SAVE_EVERY or
                               episode == self.EPISODES) and episode != 1:
-                self.save(episode)
+                self.save(episode_offset)
 
         # Save stats figure:
         if self.RENDER_STATS and self.RENDER_STATS_SAVE:
-            self.fig.savefig(self.FOLDER_MODELS + self.name + '.png')
+            self.fig1.savefig(self.FOLDER_MODELS + self.name + '_reward.png')
+            self.fig2.savefig(self.FOLDER_MODELS + self.name + '_epsilon.png')
 
     def __train_networks__(self, terminal_state):
         """
@@ -275,69 +301,39 @@ class CatchAgent:
             self.target_model_update_counter = 0
 
     def save(self, episode):
-        model_name = self.FOLDER_MODELS + self.name + f'_{episode:04d}'
-        self.model.save(model_name + '.model')
-        with open(model_name + '.memory', 'wb') as filename:
-            np.save(filename, np.array(self.memory))
+        model_name = self.FOLDER_MODELS + self.name + f'_episode_{episode:04d}'
+        self.model.save_weights(model_name + '.h5')
+        data = {'epsilons': self.epsilons,
+                'memory': self.memory,
+                'stats': self.stats}
+        with open(model_name + '.agent', 'wb') as filename:
+            pickle.dump(data, filename)
 
     def load(self, model_name):
         prefix = self.FOLDER_MODELS + model_name
-        self.model = tf.keras.models.load_model(prefix + '.model')
-        self.target_model = tf.keras.models.load_model(prefix + '.model')
-        with open(prefix + '.memory', 'rb') as filename:
-            memories = np.load(filename, allow_pickle=True)
-        for memory in memories:
-            self.memory.append(memory)
-
-    def fill_memory(self, games=1000):
-        """
-        Play a number of random games to fill the memory.
-        """
-
-        for game in range(1, games + 1):
-            # Reset the game environment:
-            current_state = self.env.reset()
-            done = False
-
-            # Play a random game:
-            move = 0
-            while not self.env.done:
-                #
-                move += 1
-
-                # Pick a random action:
-                action = np.random.randint(0, len(self.env.actions))
-
-                # Perform the action:
-                new_state, reward, done, info = self.env.step(
-                    self.env.actions[action])
-
-                # Add the move to :
-                self.memory.append(
-                    (current_state, action, reward, new_state, done, info))
-
-                #
-                current_state = new_state
-                if done:
-                    break
-
-            # Print some information:
-            print(f'Added a random game to the memory: {game:4d}/{games} '
-                  f"(score = {self.env.info['score']}, "
-                  f"reward = {self.env.info['total_reward']})")
+        self.model.load_weights(prefix + '.h5')
+        self.target_model.load_weights(prefix + '.h5')
+        with open(prefix + '.agent', 'rb') as filename:
+            data = pickle.load(filename)
+        self.epsilons = data['epsilons']
+        self.memory = data['memory']
+        self.stats = data['stats']
+        self.offset = len(self.epsilons)
+        del(data)
 
 
 if __name__ == '__main__':
     # Custom training parameters:
     PARAMS = {
-        'EPISODES': 1_000,
-        'GAMMA': 0.99,
-        'EPSILON_DECAY': 0.975,
+        'EPISODES': 500,
+        'GAMMA': 0.95,
+        'EPSILON_START': 0.10,
+        'EPSILON_DECAY': 0.999,
         'EPSILON_MIN': 0.01,
         'MEMORY_SIZE_MAX': 1_000_000,
-        'MEMORY_SIZE_MIN': 1_000,
-        'MINIBATCH_SIZE': 128,
-        'TARGET_MODEL_UPDATE_PERIOD': 32,
+        'MEMORY_SIZE_MIN': 500,
+        'MINIBATCH_SIZE': 32,
+        'TARGET_MODEL_UPDATE_PERIOD': 10,
         'RENDER': True,
         'RENDER_EVERY': 100,
         'RENDER_SAVE': True,
@@ -345,24 +341,13 @@ if __name__ == '__main__':
         'RENDER_STATS': True,
         'RENDER_STATS_SAVE': True,
         'SAVE': True,
-        'SAVE_EVERY': 1000
+        'SAVE_EVERY': 100
     }
 
     # Setup game environment and agent:
     env = Catch(rounds=10)
     agent = CatchAgent(env, 'model A', **PARAMS)
-
-    # Initialize the memory:
-    agent.fill_memory(1000)
-
-    # Load model:
-    # agent.load('model_A_2020_11_04_01_46_2000')
+    agent.load('model_A_episode_0600')
 
     # Train agent:
     agent.train()
-
-    # Load agent: (TO DO)
-    # agent.load('models/model_A_2020_11_02_23_59_2500.model')
-
-    # Have the agent play a game: (TO DO)
-    # agent.play()

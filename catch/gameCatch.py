@@ -56,20 +56,13 @@ class Catch():
         # Drop the ball:
         self.ball_y += 1
 
-        # Calculate the reward:
-        if self.paddle_left <= self.ball_x < self.paddle_left + PADDLE_WIDTH:
-            self.reward = 1
-            good_position = True
-        else:
-            self.reward = -1
-            good_position = False
-        self.info['total_reward'] += self.reward
-
         #
+        self.reward = 0
         if self.ball_y == HEIGHT - 1:
             #
-            if good_position:
+            if self.paddle_left <= self.ball_x < self.paddle_left + PADDLE_WIDTH:
                 self.info['score'] += 1
+                self.reward = 1
 
             #
             self.info['rounds'] += 1
@@ -79,6 +72,7 @@ class Catch():
             # Reset the ball:
             self.ball_x = np.random.randint(1, WIDTH)
             self.ball_y = 0
+        self.info['total_reward'] += self.reward
 
         # Redraw the state:
         self.draw_state()
